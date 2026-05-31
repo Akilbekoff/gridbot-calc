@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gridbot Calc</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gridbot Calc">
+<meta name="theme-color" content="#00ff9d">
+<link rel="apple-touch-icon" href="icons/icon-192x192.png">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0a0f;--panel:#111118;--border:#1e1e2e;--accent:#00ff9d;--accent2:#ff6b35;--accent3:#4f8cff;--text:#e8e8f0;--muted:#7a7a9a;--card:#16161f;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:20px 16px 60px;background-image:radial-gradient(ellipse at 20% 0%,rgba(0,255,157,0.05) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(79,140,255,0.06) 0%,transparent 60%);}
+  header{text-align:center;margin-bottom:24px;}
+  header h1{font-size:24px;font-weight:800;color:var(--accent);letter-spacing:-0.5px;}
+  header p{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:2px;text-transform:uppercase;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:12px;}
+  .card-title{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:14px;}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:0.5px;}
+  .field input{background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:16px;font-weight:700;padding:11px 13px;outline:none;transition:border-color 0.2s;width:100%;-webkit-appearance:none;}
+  .field input:focus{border-color:var(--accent);}
+  .field.full{grid-column:1/-1;}
+  .coverage-badge{display:flex;align-items:center;justify-content:space-between;background:rgba(0,255,157,0.07);border:1px solid rgba(0,255,157,0.25);border-radius:10px;padding:10px 14px;margin-top:10px;}
+  .coverage-badge span:first-child{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);}
+  .coverage-badge span:last-child{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:var(--accent);}
+  .grid-controls{display:flex;gap:10px;align-items:center;margin-bottom:4px;}
+  .grid-controls input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:4px;background:var(--border);outline:none;}
+  .grid-controls input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 12px rgba(0,255,157,0.4);}
+  .grid-manual{background:var(--panel);border:1px solid var(--accent);border-radius:10px;color:var(--accent);font-family:'Space Mono',monospace;font-size:18px;font-weight:700;padding:6px 10px;width:68px;text-align:center;outline:none;-webkit-appearance:none;}
+  .commission-toggle{display:grid;grid-template-columns:1fr 1fr;background:var(--panel);border-radius:10px;border:1px solid var(--border);overflow:hidden;margin-bottom:12px;}
+  .commission-toggle button{background:none;border:none;padding:11px;color:var(--muted);font-family:'Space Mono',monospace;font-size:12px;cursor:pointer;transition:all 0.2s;}
+  .commission-toggle button.active{background:rgba(0,255,157,0.12);color:var(--accent);font-weight:700;}
+  .results{background:linear-gradient(135deg,#0c1810 0%,#0a0f1a 100%);border:1px solid rgba(0,255,157,0.25);border-radius:16px;padding:20px;margin-bottom:12px;}
+  .results-title{font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:16px;font-family:'Space Mono',monospace;}
+  .metric{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+  .metric:last-child{border-bottom:none;}
+  .metric-label{font-size:13px;color:#9090b8;font-family:'Space Mono',monospace;}
+  .metric-value{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--text);}
+  .metric-value.green{color:var(--accent);}
+  .metric-value.orange{color:var(--accent2);}
+  .metric-value.blue{color:var(--accent3);}
+  .section-divider{height:1px;background:rgba(0,255,157,0.2);margin:16px 0;}
+  .section-label{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;padding:8px 12px;background:rgba(0,255,157,0.08);border-radius:8px;border-left:3px solid var(--accent);}
+  .profit-hero{text-align:center;padding:16px 0 14px;}
+  .profit-hero .label{font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:'Space Mono',monospace;margin-bottom:6px;}
+  .profit-hero .value{font-size:44px;font-weight:800;color:var(--accent);line-height:1;text-shadow:0 0 30px rgba(0,255,157,0.35);}
+  .profit-hero .sub{font-family:'Space Mono',monospace;font-size:14px;color:#9090b8;margin-top:6px;}
+  .grid-viz{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:12px;}
+  .grid-viz-title{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:'Space Mono',monospace;margin-bottom:10px;}
+  .grid-lines{position:relative;height:130px;border-left:1px solid var(--border);border-right:1px solid var(--border);}
+  .grid-line{position:absolute;left:0;right:0;height:1px;background:rgba(0,255,157,0.18);display:flex;align-items:center;}
+  .grid-line.current{background:var(--accent2);z-index:2;}
+  .grid-line-price{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);padding-left:6px;white-space:nowrap;}
+  .grid-line.current .grid-line-price{color:var(--accent2);}
+  .warn{background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.35);border-radius:10px;padding:11px 14px;font-size:13px;color:var(--accent2);font-family:'Space Mono',monospace;margin-top:12px;display:none;}
+  .warn.show{display:block;}
+  .breakeven-bar{height:6px;background:var(--border);border-radius:6px;margin-top:10px;overflow:hidden;}
+  .breakeven-fill{height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent));border-radius:6px;transition:width 0.4s ease;}
+  .breakeven-label{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);margin-top:6px;text-align:right;}
+  .hint{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⬡ GRIDBOT CALC</h1>
+  <p>Спотовая сетка · Калькулятор доходности</p>
+</header>
+
+<div class="card">
+  <div class="card-title">Ценовой диапазон</div>
+  <div class="row">
+    <div class="field">
+      <label>Нижняя цена $</label>
+      <input type="number" id="priceL" value="82" step="0.01" inputmode="decimal">
+    </div>
+    <div class="field">
+      <label>Верхняя цена $</label>
+      <input type="number" id="priceH" value="92" step="0.01" inputmode="decimal">
+    </div>
+  </div>
+  <div class="field full">
+    <label>Текущая цена $</label>
+    <input type="number" id="priceCur" value="85.84" step="0.01" inputmode="decimal">
+  </div>
+  <div class="coverage-badge">
+    <span>Перекрытие диапазона</span>
+    <span id="coveragePct">12.20%</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Количество сеток</div>
+  <div class="grid-controls">
+    <input type="range" id="gridSlider" min="2" max="200" value="10">
+    <input type="number" id="gridManual" class="grid-manual" value="10" min="2" max="200" inputmode="numeric">
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Инвестиции</div>
+  <div class="field">
+    <label>Сумма USDT</label>
+    <input type="number" id="invest" value="50" step="1" inputmode="decimal">
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Комиссия</div>
+  <div class="commission-toggle">
+    <button id="btnMaker" class="active" onclick="setCommission('maker')">Мейкер</button>
+    <button id="btnTaker" onclick="setCommission('taker')">Тейкер</button>
+  </div>
+  <div class="row" style="margin-bottom:0">
+    <div class="field">
+      <label>Мейкер %</label>
+      <input type="number" id="commMaker" value="0.1" step="0.01" inputmode="decimal">
+    </div>
+    <div class="field">
+      <label>Тейкер %</label>
+      <input type="number" id="commTaker" value="0.1" step="0.01" inputmode="decimal">
+    </div>
+  </div>
+</div>
+
+<div class="card" style="border-color:rgba(0,255,157,0.35);">
+  <div class="card-title">Завершённые циклы</div>
+  <div class="hint">1 цикл = купил внизу + продал наверху (1 ордер)</div>
+  <div class="row" style="margin-bottom:0">
+    <div class="field">
+      <label>Циклов в день</label>
+      <input type="number" id="cycDay" value="5" min="0" step="1" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>Циклов в месяц</label>
+      <input type="number" id="cycMonth" value="150" min="0" step="1" inputmode="numeric">
+    </div>
+  </div>
+</div>
+
+<div class="results">
+  <div class="results-title">// результаты</div>
+  <div class="profit-hero">
+    <div class="label">Чистая прибыль на 1 цикл</div>
+    <div class="value" id="profitPerGrid">—</div>
+    <div class="sub" id="profitPerGridUsdt">— USDT</div>
+  </div>
+  <div class="metric">
+    <span class="metric-label">Шаг сетки %</span>
+    <span class="metric-value blue" id="gridStep">—</span>
+  </div>
+  <div class="metric">
+    <span class="metric-label">Шаг сетки $</span>
+    <span class="metric-value blue" id="gridStepUsd">—</span>
+  </div>
+  <div class="metric">
+    <span class="metric-label">Капитал на ордер</span>
+    <span class="metric-value" id="perOrder">—</span>
+  </div>
+  <div class="metric">
+    <span class="metric-label">SOL на ордер</span>
+    <span class="metric-value" id="solPerOrder">—</span>
+  </div>
+  <div class="metric">
+    <span class="metric-label">Прибыль брутто / цикл</span>
+    <span class="metric-value green" id="grossProfit">—</span>
+  </div>
+  <div class="metric">
+    <span class="metric-label">Комиссия / цикл</span>
+    <span class="metric-value orange" id="commPerTrade">—</span>
+  </div>
+
+  <div class="section-divider"></div>
+  <div class="section-label">// Завершённые циклы в день</div>
+  <div class="metric">
+    <span class="metric-label">Количество циклов</span>
+    <span class="metric-value blue" id="cyclesDayCount">—</span>
+  </div>
+  <div class="metric">
+    <span class="metric-label">Прибыль за день</span>
+    <span class="metric-value green" id="profitDay">—</span>
+  </div>
+
+  <div class="section-divider"></div>
+  <div class="section-label">// Завершённые циклы в месяц</div>
+  <div class="metric">
+    <span class="metric-label">Количество циклов</span>
+    <span class="metric-value blue" id="cyclesMonthCount">—</span>
+  </div>
+  <div class="metric">
+    <span class="metric-label">Прибыль за месяц</span>
+    <span class="metric-value green" id="profitMonth">—</span>
+  </div>
+
+  <div class="section-divider"></div>
+  <div class="metric">
+    <span class="metric-label">ROI / месяц</span>
+    <span class="metric-value green" id="roi">—</span>
+  </div>
+  <div class="metric">
+    <span class="metric-label">Капитал на ордер / депозит</span>
+    <span class="metric-value" id="investShare">—</span>
+  </div>
+  <div class="breakeven-bar">
+    <div class="breakeven-fill" id="breakevenFill" style="width:0%"></div>
+  </div>
+  <div class="breakeven-label" id="breakevenLabel">Окупаемость: —</div>
+</div>
+
+<div class="warn" id="warnLow">⚠ Прибыль меньше комиссии. Увеличь шаг или уменьши кол-во сеток.</div>
+<div class="warn" id="warnRange">⚠ Текущая цена вне диапазона сетки.</div>
+
+<div class="grid-viz">
+  <div class="grid-viz-title">// визуализация сетки</div>
+  <div class="grid-lines" id="gridLines"></div>
+</div>
+
+<script>
+let commissionMode='maker';
+let gridCount=10;
+
+function setCommission(mode){
+  commissionMode=mode;
+  document.getElementById('btnMaker').classList.toggle('active',mode==='maker');
+  document.getElementById('btnTaker').classList.toggle('active',mode==='taker');
+  calculate();
+}
+
+function fmt(n,dec){if(isNaN(n)||!isFinite(n))return'—';return n.toFixed(dec);}
+function fmtUSD(n){if(isNaN(n)||!isFinite(n))return'—';return(Math.abs(n)<0.001?n.toFixed(6):n.toFixed(4))+' USDT';}
+
+function calculate(){
+  const pL=parseFloat(document.getElementById('priceL').value);
+  const pH=parseFloat(document.getElementById('priceH').value);
+  const pC=parseFloat(document.getElementById('priceCur').value);
+  const invest=parseFloat(document.getElementById('invest').value);
+  const cMaker=parseFloat(document.getElementById('commMaker').value)/100;
+  const cTaker=parseFloat(document.getElementById('commTaker').value)/100;
+  const cycDay=parseInt(document.getElementById('cycDay').value)||0;
+  const cycMonth=parseInt(document.getElementById('cycMonth').value)||0;
+
+  if(pL>0&&pH>pL){
+    document.getElementById('coveragePct').textContent=((pH-pL)/pL*100).toFixed(2)+'%';
+  }
+
+  if(!pL||!pH||pL>=pH||!gridCount||!invest)return;
+
+  const totalComm=cMaker+cTaker;
+  const range=pH-pL;
+  const stepUsd=range/gridCount;
+  const stepPct=(stepUsd/pL)*100;
+  const perOrder=invest/(gridCount+1);
+  const avgPrice=(pL+pH)/2;
+  const solPerOrder=perOrder/avgPrice;
+  const grossUsdt=perOrder*(stepPct/100);
+  const commUsdt=perOrder*totalComm;
+  const netUsdt=grossUsdt-commUsdt;
+  const netPct=(netUsdt/perOrder)*100;
+  const isProfit=netUsdt>0;
+  const profitDay=netUsdt*cycDay;
+  const profitMonth=netUsdt*cycMonth;
+  const roi=(profitMonth/invest)*100;
+  const investShare=(perOrder/invest)*100;
+  const breakevenTrades=isProfit?Math.ceil(invest/netUsdt):Infinity;
+
+  document.getElementById('profitPerGrid').textContent=(isProfit?'+':'')+fmt(netPct,2)+'%';
+  document.getElementById('profitPerGrid').style.color=isProfit?'var(--accent)':'var(--accent2)';
+  document.getElementById('profitPerGridUsdt').textContent=(isProfit?'+':'')+fmtUSD(netUsdt);
+  document.getElementById('gridStep').textContent=fmt(stepPct,2)+'%';
+  document.getElementById('gridStepUsd').textContent='$'+fmt(stepUsd,2);
+  document.getElementById('perOrder').textContent=fmt(perOrder,2)+' USDT';
+  document.getElementById('solPerOrder').textContent=fmt(solPerOrder,4)+' SOL';
+  document.getElementById('grossProfit').textContent='+'+fmt(stepPct,2)+'% (+'+fmtUSD(grossUsdt)+')';
+  document.getElementById('commPerTrade').textContent='-'+fmtUSD(commUsdt)+' ('+fmt(totalComm*100,2)+'%)';
+  document.getElementById('cyclesDayCount').textContent=cycDay+' цикл(ов)';
+  document.getElementById('profitDay').textContent=cycDay>0?(isProfit?'+':'')+fmtUSD(profitDay):'—';
+  document.getElementById('cyclesMonthCount').textContent=cycMonth+' цикл(ов)';
+  document.getElementById('profitMonth').textContent=cycMonth>0?(isProfit?'+':'')+fmtUSD(profitMonth):'—';
+  document.getElementById('roi').textContent=cycMonth>0?(isProfit?'+':'')+fmt(roi,1)+'% / мес':'—';
+  document.getElementById('investShare').textContent=fmt(investShare,1)+'% на ордер';
+  const bePct=isProfit?Math.min((500/breakevenTrades)*100,100):0;
+  document.getElementById('breakevenFill').style.width=bePct+'%';
+  document.getElementById('breakevenLabel').textContent=isProfit?'Окупаемость: '+breakevenTrades+' цикл(ов)':'Убыток после комиссий';
+  document.getElementById('warnLow').classList.toggle('show',!isProfit);
+  document.getElementById('warnRange').classList.toggle('show',pC<pL||pC>pH);
+  renderGrid(pL,pH,pC,gridCount);
+}
+
+function renderGrid(pL,pH,pC,grids){
+  const container=document.getElementById('gridLines');
+  container.innerHTML='';
+  const range=pH-pL;
+  const step=range/grids;
+  const showEvery=Math.ceil((grids+1)/Math.min(grids+1,20));
+  for(let i=0;i<=grids;i++){
+    if(i%showEvery!==0&&i!==grids)continue;
+    const price=pL+i*step;
+    const topPct=100-((price-pL)/range)*100;
+    const line=document.createElement('div');
+    line.className='grid-line';
+    line.style.top=topPct+'%';
+    const label=document.createElement('span');
+    label.className='grid-line-price';
+    label.textContent='$'+price.toFixed(2);
+    line.appendChild(label);
+    container.appendChild(line);
+  }
+  if(pC>=pL&&pC<=pH){
+    const topCur=100-((pC-pL)/range)*100;
+    const curLine=document.createElement('div');
+    curLine.className='grid-line current';
+    curLine.style.top=topCur+'%';
+    const curLabel=document.createElement('span');
+    curLabel.className='grid-line-price';
+    curLabel.textContent='▶ $'+pC.toFixed(2);
+    curLine.appendChild(curLabel);
+    container.appendChild(curLine);
+  }
+}
+
+document.getElementById('gridSlider').addEventListener('input',function(){
+  gridCount=parseInt(this.value);
+  document.getElementById('gridManual').value=gridCount;
+  calculate();
+});
+document.getElementById('gridManual').addEventListener('input',function(){
+  let v=parseInt(this.value);
+  if(isNaN(v))return;
+  v=Math.max(2,Math.min(200,v));
+  gridCount=v;
+  document.getElementById('gridSlider').value=v;
+  calculate();
+});
+
+['priceL','priceH','priceCur','invest','commMaker','commTaker','cycDay','cycMonth'].forEach(function(id){
+  document.getElementById(id).addEventListener('input',calculate);
+});
+
+calculate();
+</script>
+<script>
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").catch(function(){});
+}
+</script>
+</body>
+</html>
